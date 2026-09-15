@@ -1,20 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/features/auth/auth-context";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { CreateMenu } from "@/components/layout/CreateMenu";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { Menu, X, Home, Compass, Search, ShoppingBag, Bell, LogIn, UserPlus, ImagePlus, Video, Clapperboard } from "lucide-react";
+import { Menu, X, Home, Compass, Search, ShoppingBag, Bell, LogIn, UserPlus, ImagePlus, Video, Clapperboard, Heart, ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 interface NavLinkDef {
   href: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  badge: string | null;
+  badge?: string | number | null;
 }
 
 function isNavLinkActive(pathname: string, href: string): boolean {
@@ -25,18 +25,44 @@ export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, isAuthenticated, isLoading } = useAuth();
   const pathname = usePathname();
+  const [cartCount, setCartCount] = useState<number>(0);
 
-  // "Create" renders as a dropdown (CreateMenu) rather than a plain link —
-  // spliced into this position when rendering the desktop nav below.
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setCartCount(0);
+      return;
+    }
+
+    async function fetchCartCount() {
+      try {
+        const res = await fetch("/api/cart", { headers: { "Cache-Control": "no-cache" } });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.cart) {
+            setCartCount(data.cart.totalItems);
+          }
+        }
+      } catch {
+        // silent catch
+      }
+    }
+
+    fetchCartCount();
+    const interval = setInterval(fetchCartCount, 15000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated, pathname]);
+
   const navLinks: NavLinkDef[] = [
     { href: "/home", label: "Feed", icon: Home, badge: null },
     { href: "/reels", label: "Reels", icon: Clapperboard, badge: null },
     { href: "/explore", label: "Explore", icon: Compass, badge: null },
     { href: "/search", label: "Search", icon: Search, badge: null },
     { href: "/products", label: "Shop", icon: ShoppingBag, badge: null },
+    { href: "/cart", label: "Cart", icon: ShoppingCart, badge: cartCount > 0 ? cartCount : null },
+    { href: "/wishlist", label: "Wishlist", icon: Heart, badge: null },
     { href: "/notifications", label: "Notifications", icon: Bell, badge: null },
   ];
-  const createMenuIndex = 5; // after "Shop", before "Notifications"
+  const createMenuIndex = 5;
 
   return (
     <nav className="fixed top-0 z-50 w-full border-b border-neutral-200/80 dark:border-neutral-800/80 bg-white/80 dark:bg-black/80 backdrop-blur-xl transition-colors">
@@ -66,8 +92,8 @@ export function Navbar() {
                   )}
                 >
                   <span>{link.label}</span>
-                  {link.badge && (
-                    <span className="rounded-full bg-neutral-200 dark:bg-neutral-800 px-1.5 py-0.5 text-[10px] font-semibold text-neutral-500 dark:text-neutral-400">
+                  {link.badge != null && (
+                    <span className="rounded-full bg-fuchsia-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
                       {link.badge}
                     </span>
                   )}
@@ -125,11 +151,16 @@ export function Navbar() {
         {/* MOBILE MENU TOGGLE */}
         <div className="flex items-center gap-2 md:hidden">
           <Link
-            href="/search"
-            aria-label="Search"
-            className="flex h-10 w-10 items-center justify-center rounded-2xl border border-neutral-300 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300"
+            href="/cart"
+            aria-label="Cart"
+            className="relative flex h-10 w-10 items-center justify-center rounded-2xl border border-neutral-300 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300"
           >
-            <Search className="h-4 w-4" />
+            <ShoppingCart className="h-4 w-4" />
+            {cartCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-fuchsia-500 text-[9px] font-bold text-white">
+                {cartCount}
+              </span>
+            )}
           </Link>
 
           <ThemeToggle />
@@ -162,8 +193,8 @@ export function Navbar() {
                     <Icon className="h-5 w-5 text-neutral-500" />
                     <span className="font-medium">{link.label}</span>
                   </div>
-                  {link.badge && (
-                    <span className="rounded-full bg-neutral-200 dark:bg-neutral-800 px-2 py-0.5 text-xs text-neutral-500">
+                  {link.badge != null && (
+                    <span className="rounded-full bg-fuchsia-500 px-2 py-0.5 text-xs font-bold text-white">
                       {link.badge}
                     </span>
                   )}
@@ -198,6 +229,13 @@ export function Navbar() {
                   className="flex items-center gap-3 rounded-2xl px-4 py-3 text-neutral-900 dark:text-white font-medium hover:bg-neutral-100 dark:hover:bg-white/10"
                 >
                   <span>My Profile (@{user.username})</span>
+                </Link>
+                <Link
+                  href="/wishlist"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 rounded-2xl px-4 py-3 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-white/10"
+                >
+                  <span>Wishlist</span>
                 </Link>
                 <Link
                   href="/saved"

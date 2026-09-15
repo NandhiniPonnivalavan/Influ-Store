@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
-import { Check, Share2, Store as StoreIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Check, Heart, Share2, Store as StoreIcon, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/features/toast/toast-context";
+import { useAuth } from "@/features/auth/auth-context";
 import { formatMoney } from "@/lib/utils/money";
 import { PRODUCT_CATEGORY_LABELS, ProductCategoryValue } from "@/lib/constants/product";
 import { ProductDetailItem, VariantOptionValueMap } from "@/types/product";
@@ -25,11 +27,18 @@ interface ProductDetailClientProps {
 
 export function ProductDetailClient({ product }: ProductDetailClientProps) {
   const { showToast } = useToast();
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
+
   const [selected, setSelected] = useState<VariantOptionValueMap>(() => {
     const firstActive = product.variants.find((v) => v.isActive) ?? product.variants[0];
     return firstActive?.optionValues ?? {};
   });
+  const [quantity, setQuantity] = useState(1);
   const [copied, setCopied] = useState(false);
+  const [addingToCart, setAddingToCart] = useState(false);
+  const [inWishlist, setInWishlist] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
 
   const matchedVariant = useMemo(
     () => product.variants.find((v) => sameCombo(v.optionValues, selected)) ?? null,
@@ -38,20 +47,105 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
 
   const displayPrice = matchedVariant?.price ?? product.basePrice;
   const hasOptions = product.options.length > 0;
+  const stockAvailable = matchedVariant ? matchedVariant.stock : product.totalStock;
 
   const stockLabel = !matchedVariant
     ? "Not available in this combination"
-    : matchedVariant.stock > 0
+    : stockAvailable > 0
       ? "In stock"
       : "Out of stock";
   const stockBadgeVariant: "success" | "outline" | "warning" = !matchedVariant
     ? "warning"
-    : matchedVariant.stock > 0
+    : stockAvailable > 0
       ? "success"
       : "outline";
 
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    async function checkWishlist() {
+      try {
+        const res = await fetch(`/api/wishlist/${product.id}`);
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setInWishlist(data.inWishlist);
+        }
+      } catch {
+        // silent catch
+      }
+    }
+    checkWishlist();
+  }, [product.id, isAuthenticated]);
+
   function selectOption(optionName: string, value: string) {
     setSelected((current) => ({ ...current, [optionName]: value }));
+  }
+
+  async function handleAddToCart() {
+    if (!isAuthenticated) {
+      showToast("Please log in to add items to cart", "error");
+      router.push("/login");
+      return;
+    }
+
+    if (stockAvailable <= 0) {
+      showToast("Product is out of stock", "error");
+      return;
+    }
+
+    setAddingToCart(true);
+    try {
+      const res = await fetch("/api/cart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId: product.id,
+          variantId: matchedVariant?.id ?? null,
+          quantity,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to add to cart");
+      }
+      showToast("Added to cart successfully!");
+    } catch (err: any) {
+      showToast(err.message || "Could not add item to cart", "error");
+    } finally {
+      setAddingToCart(false);
+    }
+  }
+
+  async function toggleWishlist() {
+    if (!isAuthenticated) {
+      showToast("Please log in to save items to wishlist", "error");
+      router.push("/login");
+      return;
+    }
+
+    setWishlistLoading(true);
+    try {
+      if (inWishlist) {
+        const res = await fetch(`/api/wishlist/${product.id}`, { method: "DELETE" });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message);
+        setInWishlist(false);
+        showToast("Removed from wishlist");
+      } else {
+        const res = await fetch("/api/wishlist", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ productId: product.id }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message);
+        setInWishlist(true);
+        showToast("Added to wishlist!");
+      }
+    } catch (err: any) {
+      showToast(err.message || "Failed to update wishlist", "error");
+    } finally {
+      setWishlistLoading(false);
+    }
   }
 
   async function handleShare() {
@@ -126,6 +220,39 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
           </div>
         )}
 
+        {/* QUANTITY SELECTOR */}
+        {stockAvailable > 0 && (
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-400">
+              Quantity
+            </p>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center rounded-full border border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-900">
+                <button
+                  type="button"
+                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                  className="flex h-10 w-10 items-center justify-center text-neutral-700 dark:text-neutral-300 hover:text-fuchsia-500"
+                >
+                  −
+                </button>
+                <span className="w-10 text-center text-sm font-semibold text-neutral-900 dark:text-white">
+                  {quantity}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setQuantity((q) => Math.min(stockAvailable, q + 1))}
+                  className="flex h-10 w-10 items-center justify-center text-neutral-700 dark:text-neutral-300 hover:text-fuchsia-500"
+                >
+                  +
+                </button>
+              </div>
+              <span className="text-xs text-neutral-400">
+                ({stockAvailable} available)
+              </span>
+            </div>
+          </div>
+        )}
+
         {product.description && (
           <div>
             <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-400">
@@ -140,12 +267,26 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
         <div className="flex flex-col gap-3 sm:flex-row">
           <Button
             type="button"
-            disabled
-            className="flex-1"
-            title="Cart & checkout are coming in a future update"
+            onClick={handleAddToCart}
+            isLoading={addingToCart}
+            disabled={stockAvailable <= 0}
+            className="flex-1 gap-2"
           >
-            Add to Cart — Coming Soon
+            <ShoppingBag className="h-4 w-4" />
+            {stockAvailable <= 0 ? "Out of Stock" : "Add to Cart"}
           </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={toggleWishlist}
+            isLoading={wishlistLoading}
+            className={cn("gap-2", inWishlist && "text-pink-500 border-pink-500/50 bg-pink-500/10")}
+          >
+            <Heart className={cn("h-4 w-4", inWishlist && "fill-current text-pink-500")} />
+            {inWishlist ? "Saved" : "Wishlist"}
+          </Button>
+
           <Button type="button" variant="outline" onClick={handleShare} className="gap-2">
             {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
             {copied ? "Copied" : "Share"}
