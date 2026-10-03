@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db/prisma";
 import { NotFoundError, BadRequestError } from "@/lib/errors";
 import { CursorPage } from "@/types/post";
 import { UserCardItem, FollowToggleResponse, FollowCounts } from "@/types/follow";
+import { createNotification } from "@/lib/services/notification.service";
 
 /**
  * Toggles the follow state between the current user and the target user.
@@ -48,6 +49,31 @@ export async function toggleFollow(
       },
     });
     isFollowing = true;
+
+    // Send notification to the user who was followed
+    try {
+      const followerUser = await prisma.user.findUnique({
+        where: { id: followerId },
+        select: {
+          username: true,
+          profile: { select: { displayName: true, avatarUrl: true } },
+        },
+      });
+
+      if (followerUser) {
+        const name = followerUser.profile?.displayName || `@${followerUser.username}`;
+        await createNotification({
+          userId: targetUser.id,
+          actorId: followerId,
+          type: "follow",
+          message: `${name} started following you.`,
+          linkUrl: `/profile/${followerUser.username}`,
+          imageUrl: followerUser.profile?.avatarUrl || undefined,
+        });
+      }
+    } catch {
+      // non-blocking notification failure
+    }
   }
 
   const [followerCount, followingCount] = await Promise.all([

@@ -106,6 +106,9 @@ model User {
   // User Settings & Preferences
   settings      UserSettings?
 
+  // Notifications
+  notifications Notification[]
+
   @@index([username])
   @@index([email])
   @@map("users")
@@ -803,4 +806,23 @@ model UserSettings {
 
   @@index([userId])
   @@map("user_settings")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  actorId   String?
+  type      String   // "like" | "comment" | "follow" | "purchase" | "system"
+  message   String
+  read      Boolean  @default(false)
+  linkUrl   String?
+  imageUrl  String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+  @@map("notifications")
 }

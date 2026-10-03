@@ -5,6 +5,7 @@ import { COMMENTS_PAGE_SIZE, REPLIES_PAGE_SIZE } from "@/lib/constants/post";
 import { CreateCommentInput } from "@/lib/validations/comment.schema";
 import { CommentItem, CursorPage } from "@/types/post";
 import { toPostAuthor } from "./post-shared";
+import { createNotification } from "@/lib/services/notification.service";
 
 function commentInclude(currentUserId: string | null) {
   return {
@@ -50,7 +51,7 @@ export async function createComment(
 ): Promise<CommentItem> {
   const post = await prisma.post.findUnique({
     where: { id: postId },
-    select: { id: true },
+    select: { id: true, authorId: true },
   });
   if (!post) throw new NotFoundError("Post not found.");
 
@@ -72,6 +73,32 @@ export async function createComment(
     data: { postId, authorId, parentId, content: input.content },
     include: commentInclude(authorId),
   });
+
+  // Notify post author if commenter is not author
+  if (post.authorId !== authorId) {
+    try {
+      const commenter = await prisma.user.findUnique({
+        where: { id: authorId },
+        select: {
+          username: true,
+          profile: { select: { displayName: true, avatarUrl: true } },
+        },
+      });
+      if (commenter) {
+        const name = commenter.profile?.displayName || `@${commenter.username}`;
+        await createNotification({
+          userId: post.authorId,
+          actorId: authorId,
+          type: "comment",
+          message: `${name} commented: "${input.content.slice(0, 40)}${input.content.length > 40 ? "..." : ""}"`,
+          linkUrl: `/home`,
+          imageUrl: commenter.profile?.avatarUrl || undefined,
+        });
+      }
+    } catch {
+      // non-blocking
+    }
+  }
 
   return serializeComment(comment, authorId);
 }
