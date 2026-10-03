@@ -20,6 +20,10 @@ export function Avatar({
 }: AvatarProps) {
   const [imageError, setImageError] = useState(false);
 
+  React.useEffect(() => {
+    setImageError(false);
+  }, [src]);
+
   const sizes = {
     sm: "h-8 w-8 text-xs",
     md: "h-10 w-10 text-sm",
@@ -41,6 +45,7 @@ export function Avatar({
       <div className="relative h-full w-full overflow-hidden rounded-full bg-neutral-900 flex items-center justify-center text-white">
         {src && !imageError ? (
           <img
+            key={src}
             src={src}
             alt={alt || name}
             onError={() => setImageError(true)}

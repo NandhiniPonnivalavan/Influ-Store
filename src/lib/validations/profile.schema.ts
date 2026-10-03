@@ -45,7 +45,25 @@ export const profileUpdateSchema = z.object({
   avatarUrl: z
     .string()
     .trim()
-    .url("Please provide a valid image URL")
+    .refine(
+      (val) => {
+        if (!val || val === "") return true;
+        if (
+          val.startsWith("/uploads/") ||
+          val.startsWith("/") ||
+          val.startsWith("data:image/")
+        ) {
+          return true;
+        }
+        try {
+          new URL(val);
+          return true;
+        } catch {
+          return false;
+        }
+      },
+      { message: "Please provide a valid image URL or upload an image" }
+    )
     .optional()
     .nullable()
     .or(z.literal("")),
