@@ -24,7 +24,12 @@ interface SelectedVideo {
   duration?: number;
 }
 
-export function CreateReelForm() {
+export interface CreateReelFormProps {
+  onSuccess?: (reel: any) => void;
+  onCancel?: () => void;
+}
+
+export function CreateReelForm({ onSuccess, onCancel }: CreateReelFormProps = {}) {
   const router = useRouter();
   const { showToast } = useToast();
   const { user } = useAuth();
@@ -125,8 +130,12 @@ export function CreateReelForm() {
 
       URL.revokeObjectURL(video.previewUrl);
       showToast("Reel published!");
-      router.push(`/reel/${data.reel.id}`);
-      router.refresh();
+      if (onSuccess) {
+        onSuccess(data.reel);
+      } else {
+        router.push(`/reel/${data.reel.id}`);
+        router.refresh();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong while publishing.");
       setPublishing(false);
@@ -258,7 +267,12 @@ export function CreateReelForm() {
         )}
 
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <Button type="button" variant="outline" onClick={() => router.back()} disabled={publishing}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => (onCancel ? onCancel() : router.back())}
+            disabled={publishing}
+          >
             Cancel
           </Button>
           <Button

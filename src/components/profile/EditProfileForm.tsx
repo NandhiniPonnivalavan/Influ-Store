@@ -90,7 +90,7 @@ export function EditProfileForm() {
             Profile Photo
           </h2>
           <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-            Provide an image URL for your avatar. (Direct S3 uploads will be activated with AWS in Phase 2).
+            Provide an image URL for your avatar.
           </p>
         </div>
 

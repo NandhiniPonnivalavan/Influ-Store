@@ -43,20 +43,7 @@ export function AuthCard({
             Influ-Store unites Instagram-style discovery with a powerful multi-vendor shopping experience.
           </p>
 
-          <div className="mt-10 flex gap-8 border-t border-white/10 pt-8 text-sm">
-            <div>
-              <p className="text-2xl font-bold text-white">Phase 1</p>
-              <p className="text-xs text-neutral-400 mt-0.5">Foundation & Auth</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-white">Secure</p>
-              <p className="text-xs text-neutral-400 mt-0.5">JWT & Password Hash</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-white">Prisma</p>
-              <p className="text-xs text-neutral-400 mt-0.5">PostgreSQL / RDS</p>
-            </div>
-          </div>
+
         </div>
 
         {/* FOOTER */}

@@ -19,6 +19,8 @@ interface ReelGridProps {
    * different shape (e.g. /api/search nests results under `results.reels`).
    */
   extractResponse?: (data: unknown) => { reels: ReelItem[]; nextCursor: string | null };
+  isOwnProfile?: boolean;
+  onCreateClick?: () => void;
 }
 
 function defaultExtractResponse(data: unknown): { reels: ReelItem[]; nextCursor: string | null } {
@@ -48,6 +50,8 @@ export function ReelGrid({
   initialCursor,
   emptyMessage,
   extractResponse = defaultExtractResponse,
+  isOwnProfile = false,
+  onCreateClick,
 }: ReelGridProps) {
   const [reels, setReels] = useState(initialReels);
   const [cursor, setCursor] = useState(initialCursor);
@@ -79,6 +83,27 @@ export function ReelGrid({
         </div>
         <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">No reels yet</h3>
         <p className="text-sm text-neutral-500 dark:text-neutral-400">{emptyMessage}</p>
+        {isOwnProfile && (
+          <div className="pt-2">
+            {onCreateClick ? (
+              <Button
+                type="button"
+                onClick={onCreateClick}
+                className="gap-2 bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white shadow-md shadow-fuchsia-500/20 hover:from-fuchsia-500 hover:to-pink-500 border-0"
+              >
+                <Play className="h-4 w-4 fill-white" />
+                <span>Upload Reel</span>
+              </Button>
+            ) : (
+              <Link href="/create-reel">
+                <Button className="gap-2 bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white shadow-md shadow-fuchsia-500/20 hover:from-fuchsia-500 hover:to-pink-500 border-0">
+                  <Play className="h-4 w-4 fill-white" />
+                  <span>Upload Reel</span>
+                </Button>
+              </Link>
+            )}
+          </div>
+        )}
       </div>
     );
   }

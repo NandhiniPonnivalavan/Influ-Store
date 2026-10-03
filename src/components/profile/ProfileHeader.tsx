@@ -9,13 +9,15 @@ import { FollowButton } from "@/components/users/FollowButton";
 import { UserListModal } from "@/components/users/UserListModal";
 import { PublicUserProfile } from "@/types/profile";
 import { useAuth } from "@/features/auth/auth-context";
-import { Globe, Calendar, Settings, Sparkles } from "lucide-react";
+import { Globe, Calendar, Settings, Sparkles, ImagePlus, Clapperboard } from "lucide-react";
+import { CreateContentModal } from "./CreateContentModal";
 
 export function ProfileHeader({ userProfile }: { userProfile: PublicUserProfile }) {
   const { user: currentUser } = useAuth();
   const [followerCount, setFollowerCount] = useState(userProfile.counts.followers);
   const [followingCount, setFollowingCount] = useState(userProfile.counts.following);
   const [modalState, setModalState] = useState<"followers" | "following" | null>(null);
+  const [createModalTab, setCreateModalTab] = useState<"post" | "reel" | null>(null);
 
   const isOwnProfile =
     currentUser?.id === userProfile.id || currentUser?.username?.toLowerCase() === userProfile.username.toLowerCase();
@@ -68,14 +70,34 @@ export function ProfileHeader({ userProfile }: { userProfile: PublicUserProfile 
               </div>
 
               {/* ACTION BUTTONS */}
-              <div className="flex items-center justify-center sm:justify-end gap-3 pt-2 sm:pt-0">
+              <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2.5 pt-2 sm:pt-0">
                 {isOwnProfile ? (
-                  <Link href="/settings/profile">
-                    <Button variant="outline" size="sm" className="gap-2">
-                      <Settings className="h-4 w-4" />
-                      <span>Edit Profile</span>
+                  <>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => setCreateModalTab("post")}
+                      className="gap-2 shadow-md shadow-fuchsia-500/20"
+                    >
+                      <ImagePlus className="h-4 w-4" />
+                      <span>Create Post</span>
                     </Button>
-                  </Link>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCreateModalTab("reel")}
+                      className="gap-2 border-neutral-300 dark:border-neutral-700 hover:border-fuchsia-500"
+                    >
+                      <Clapperboard className="h-4 w-4 text-fuchsia-500" />
+                      <span>Upload Reel</span>
+                    </Button>
+                    <Link href="/settings/profile">
+                      <Button variant="outline" size="sm" className="gap-2">
+                        <Settings className="h-4 w-4 text-neutral-400" />
+                        <span>Edit Profile</span>
+                      </Button>
+                    </Link>
+                  </>
                 ) : (
                   <FollowButton
                     targetUsername={userProfile.username}
@@ -87,7 +109,6 @@ export function ProfileHeader({ userProfile }: { userProfile: PublicUserProfile 
                     size="md"
                   />
                 )}
-
               </div>
             </div>
 
@@ -167,6 +188,15 @@ export function ProfileHeader({ userProfile }: { userProfile: PublicUserProfile 
           title={modalState === "followers" ? "Followers" : "Following"}
           username={userProfile.username}
           type={modalState}
+        />
+      )}
+
+      {/* CREATE POST / REEL MODAL */}
+      {createModalTab && (
+        <CreateContentModal
+          isOpen={!!createModalTab}
+          initialTab={createModalTab}
+          onClose={() => setCreateModalTab(null)}
         />
       )}
     </div>

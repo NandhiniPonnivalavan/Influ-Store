@@ -89,7 +89,10 @@ export async function serializePost(
   const media = await Promise.all(
     post.media.map(async (m) => ({
       id: m.id,
-      mediaUrl: await storage.getSignedReadUrl(m.mediaKey),
+      mediaUrl:
+        m.mediaKey?.startsWith("seed/") || (m.mediaUrl && m.mediaUrl.startsWith("http"))
+          ? m.mediaUrl
+          : await storage.getSignedReadUrl(m.mediaKey),
       mediaType: m.mediaType,
       order: m.order,
       width: m.width,

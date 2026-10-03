@@ -30,7 +30,12 @@ function makeId(): string {
     : `${Date.now()}-${Math.random()}`;
 }
 
-export function CreatePostForm() {
+export interface CreatePostFormProps {
+  onSuccess?: (post: any) => void;
+  onCancel?: () => void;
+}
+
+export function CreatePostForm({ onSuccess, onCancel }: CreatePostFormProps = {}) {
   const router = useRouter();
   const { showToast } = useToast();
   const { user } = useAuth();
@@ -134,8 +139,12 @@ export function CreatePostForm() {
 
       images.forEach((image) => URL.revokeObjectURL(image.previewUrl));
       showToast("Post published!");
-      router.push(`/post/${data.post.id}`);
-      router.refresh();
+      if (onSuccess) {
+        onSuccess(data.post);
+      } else {
+        router.push(`/post/${data.post.id}`);
+        router.refresh();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong while publishing.");
       setPublishing(false);
@@ -299,7 +308,7 @@ export function CreatePostForm() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => router.back()}
+            onClick={() => (onCancel ? onCancel() : router.back())}
             disabled={publishing}
           >
             Cancel

@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Heart, MessageCircle, Images, Grid } from "lucide-react";
+import { Heart, MessageCircle, Images, Grid, ImagePlus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { FeedPost } from "@/types/post";
 
@@ -11,9 +11,18 @@ interface PostGridProps {
   initialPosts: FeedPost[];
   initialCursor: string | null;
   emptyMessage: string;
+  isOwnProfile?: boolean;
+  onCreateClick?: () => void;
 }
 
-export function PostGrid({ username, initialPosts, initialCursor, emptyMessage }: PostGridProps) {
+export function PostGrid({
+  username,
+  initialPosts,
+  initialCursor,
+  emptyMessage,
+  isOwnProfile = false,
+  onCreateClick,
+}: PostGridProps) {
   const [posts, setPosts] = useState(initialPosts);
   const [cursor, setCursor] = useState(initialCursor);
   const [loading, setLoading] = useState(false);
@@ -42,6 +51,27 @@ export function PostGrid({ username, initialPosts, initialCursor, emptyMessage }
         </div>
         <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">No posts yet</h3>
         <p className="text-sm text-neutral-500 dark:text-neutral-400">{emptyMessage}</p>
+        {isOwnProfile && (
+          <div className="pt-2">
+            {onCreateClick ? (
+              <Button
+                type="button"
+                onClick={onCreateClick}
+                className="gap-2 bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white shadow-md shadow-fuchsia-500/20 hover:from-fuchsia-500 hover:to-pink-500 border-0"
+              >
+                <ImagePlus className="h-4 w-4" />
+                <span>Create Post</span>
+              </Button>
+            ) : (
+              <Link href="/create-post">
+                <Button className="gap-2 bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white shadow-md shadow-fuchsia-500/20 hover:from-fuchsia-500 hover:to-pink-500 border-0">
+                  <ImagePlus className="h-4 w-4" />
+                  <span>Create Post</span>
+                </Button>
+              </Link>
+            )}
+          </div>
+        )}
       </div>
     );
   }

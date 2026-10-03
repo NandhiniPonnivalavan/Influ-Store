@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Grid, Bookmark, ShoppingBag, Store, Clapperboard } from "lucide-react";
+import { Grid, Bookmark, ShoppingBag, Store, Clapperboard, ImagePlus } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { FeedPost } from "@/types/post";
 import { ReelItem } from "@/types/reel";
@@ -11,6 +11,7 @@ import { PostGrid } from "@/components/posts/PostGrid";
 import { ReelGrid } from "@/components/reels/ReelGrid";
 import { ProductGrid } from "@/components/products/ProductGrid";
 import { Button } from "@/components/ui/Button";
+import { CreateContentModal } from "./CreateContentModal";
 
 interface ProfileTabsProps {
   username: string;
@@ -40,6 +41,7 @@ export function ProfileTabs({
   showStoreSetupPrompt = false,
 }: ProfileTabsProps) {
   const [activeTab, setActiveTab] = useState<"posts" | "reels" | "saved" | "shop">("posts");
+  const [createModalTab, setCreateModalTab] = useState<"post" | "reel" | null>(null);
   // Non-sellers never see a fake store tab (Phase 6 spec section 27).
   const showStoreTab = Boolean(storeSlug) || showStoreSetupPrompt;
 
@@ -113,29 +115,63 @@ export function ProfileTabs({
       {/* TAB CONTENT */}
       <div className="py-8">
         {activeTab === "posts" && (
-          <PostGrid
-            username={username}
-            initialPosts={initialPosts}
-            initialCursor={initialCursor}
-            emptyMessage={
-              isOwnProfile
-                ? "Share your first photo with the community."
-                : "This creator hasn't published any posts yet."
-            }
-          />
+          <div className="space-y-6">
+            {isOwnProfile && initialPosts.length > 0 && (
+              <div className="flex justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCreateModalTab("post")}
+                  className="gap-2 text-xs"
+                >
+                  <ImagePlus className="h-4 w-4 text-fuchsia-500" />
+                  <span>New Post</span>
+                </Button>
+              </div>
+            )}
+            <PostGrid
+              username={username}
+              initialPosts={initialPosts}
+              initialCursor={initialCursor}
+              isOwnProfile={isOwnProfile}
+              onCreateClick={() => setCreateModalTab("post")}
+              emptyMessage={
+                isOwnProfile
+                  ? "Share your first photo with the community."
+                  : "This creator hasn't published any posts yet."
+              }
+            />
+          </div>
         )}
 
         {activeTab === "reels" && (
-          <ReelGrid
-            fetchBaseUrl={`/api/users/${username}/reels`}
-            initialReels={initialReels}
-            initialCursor={initialReelsCursor}
-            emptyMessage={
-              isOwnProfile
-                ? "Share your first video with the community."
-                : "This creator hasn't published any reels yet."
-            }
-          />
+          <div className="space-y-6">
+            {isOwnProfile && initialReels.length > 0 && (
+              <div className="flex justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCreateModalTab("reel")}
+                  className="gap-2 text-xs"
+                >
+                  <Clapperboard className="h-4 w-4 text-fuchsia-500" />
+                  <span>New Reel</span>
+                </Button>
+              </div>
+            )}
+            <ReelGrid
+              fetchBaseUrl={`/api/users/${username}/reels`}
+              initialReels={initialReels}
+              initialCursor={initialReelsCursor}
+              isOwnProfile={isOwnProfile}
+              onCreateClick={() => setCreateModalTab("reel")}
+              emptyMessage={
+                isOwnProfile
+                  ? "Share your first video with the community."
+                  : "This creator hasn't published any reels yet."
+              }
+            />
+          </div>
         )}
 
         {activeTab === "saved" && (
@@ -197,6 +233,15 @@ export function ProfileTabs({
           )
         )}
       </div>
+
+      {/* CREATE POST / REEL MODAL */}
+      {createModalTab && (
+        <CreateContentModal
+          isOpen={!!createModalTab}
+          initialTab={createModalTab}
+          onClose={() => setCreateModalTab(null)}
+        />
+      )}
     </div>
   );
 }
