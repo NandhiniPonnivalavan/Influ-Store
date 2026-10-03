@@ -1,0 +1,692 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  SELLER
+  MODERATOR
+  ADMIN
+}
+
+enum AccountType {
+  CUSTOMER
+  INFLUENCER
+}
+
+enum MediaType {
+  IMAGE
+}
+
+enum SellerApplicationStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum SellerDocumentType {
+  IDENTITY_PROOF
+  BUSINESS_PROOF
+  ADDRESS_PROOF
+  OTHER
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+// A controlled, flat starter list rather than a full taxonomy model —
+// see section 9 of the Phase 6 spec. Extending this later (or migrating
+// to a ProductCategory model if a real taxonomy becomes necessary) is a
+// contained, backward-compatible change.
+enum ProductCategory {
+  FASHION
+  BEAUTY
+  ELECTRONICS
+  HOME
+  ACCESSORIES
+  BOOKS
+  FITNESS
+  OTHER
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  username      String    @unique
+  passwordHash  String
+  role          Role      @default(USER)
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  profile      Profile?
+  posts        Post[]
+  likes        Like[]
+  comments     Comment[]
+  commentLikes CommentLike[]
+  savedPosts   SavedPost[]
+
+  // Phase 3 Follow relations
+  following Follow[] @relation("UserFollowing")
+  followers Follow[] @relation("UserFollowers")
+
+  // Phase 4 Reel relations
+  reels            Reel[]
+  reelLikes        ReelLike[]
+  reelComments     ReelComment[]
+  reelCommentLikes ReelCommentLike[]
+  savedReels       SavedReel[]
+
+  // Phase 5 Seller verification relations
+  sellerApplication          SellerApplication?  @relation("UserSellerApplication")
+  reviewedSellerApplications SellerApplication[] @relation("SellerApplicationReviewer")
+
+  // Phase 6 Marketplace relation — public storefront info, distinct from
+  // SellerApplication (private verification data). Only ever present for
+  // an approved SELLER who has completed store setup.
+  sellerProfile SellerProfile?
+
+  // Phase 7 Cart + Wishlist relations
+  cartItems     CartItem[]
+  wishlistItems WishlistItem[]
+
+  @@index([username])
+  @@index([email])
+  @@map("users")
+}
+
+model Profile {
+  id          String      @id @default(cuid())
+  userId      String      @unique
+  displayName String
+  bio         String?
+  avatarUrl   String?
+  avatarKey   String?
+  website     String?
+  accountType AccountType @default(CUSTOMER)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("profiles")
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  authorId  String
+  caption   String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  author      User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  media       PostMedia[]
+  likes       Like[]
+  comments    Comment[]
+  savedBy     SavedPost[]
+  hashtags    PostHashtag[]
+  productTags PostProductTag[]
+
+  @@index([authorId])
+  @@index([createdAt])
+  @@map("posts")
+}
+
+model PostMedia {
+  id        String    @id @default(cuid())
+  postId    String
+  mediaKey  String
+  mediaUrl  String
+  mediaType MediaType @default(IMAGE)
+  order     Int       @default(0)
+  width     Int?
+  height    Int?
+  createdAt DateTime  @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, order])
+  @@index([postId])
+  @@map("post_media")
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+  @@map("likes")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  postId    String
+  authorId  String
+  parentId  String?
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  post    Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author  User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent  Comment?      @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Comment[]     @relation("CommentReplies")
+  likes   CommentLike[]
+
+  @@index([postId])
+  @@index([authorId])
+  @@index([parentId])
+  @@map("comments")
+}
+
+model CommentLike {
+  id        String   @id @default(cuid())
+  commentId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
+  @@index([commentId])
+  @@index([userId])
+  @@map("comment_likes")
+}
+
+model SavedPost {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([userId])
+  @@index([postId])
+  @@map("saved_posts")
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@map("follows")
+}
+
+model Hashtag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+
+  posts PostHashtag[]
+  reels ReelHashtag[]
+
+  @@index([name])
+  @@map("hashtags")
+}
+
+model PostHashtag {
+  id        String   @id @default(cuid())
+  postId    String
+  hashtagId String
+  createdAt DateTime @default(now())
+
+  post    Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  hashtag Hashtag @relation(fields: [hashtagId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, hashtagId])
+  @@index([postId])
+  @@index([hashtagId])
+  @@map("post_hashtags")
+}
+
+// ==================================================
+// Phase 4: Reels (short-form vertical video)
+// ==================================================
+
+model Reel {
+  id           String   @id @default(cuid())
+  authorId     String
+  caption      String?  @db.Text
+  mediaKey     String
+  mediaUrl     String
+  thumbnailKey String?
+  thumbnailUrl String?
+  duration     Int? // seconds; client-reported, see reel.service.ts for validation limitations
+  width        Int?
+  height       Int?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  author      User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  likes       ReelLike[]
+  comments    ReelComment[]
+  savedBy     SavedReel[]
+  hashtags    ReelHashtag[]
+  productTags ReelProductTag[]
+
+  @@index([authorId])
+  @@index([createdAt])
+  @@map("reels")
+}
+
+model ReelLike {
+  id        String   @id @default(cuid())
+  reelId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  reel Reel @relation(fields: [reelId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([reelId, userId])
+  @@index([reelId])
+  @@index([userId])
+  @@map("reel_likes")
+}
+
+model ReelComment {
+  id        String   @id @default(cuid())
+  reelId    String
+  authorId  String
+  parentId  String?
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reel    Reel              @relation(fields: [reelId], references: [id], onDelete: Cascade)
+  author  User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent  ReelComment?      @relation("ReelCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies ReelComment[]     @relation("ReelCommentReplies")
+  likes   ReelCommentLike[]
+
+  @@index([reelId])
+  @@index([authorId])
+  @@index([parentId])
+  @@map("reel_comments")
+}
+
+model ReelCommentLike {
+  id            String   @id @default(cuid())
+  reelCommentId String
+  userId        String
+  createdAt     DateTime @default(now())
+
+  comment ReelComment @relation(fields: [reelCommentId], references: [id], onDelete: Cascade)
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([reelCommentId, userId])
+  @@index([reelCommentId])
+  @@index([userId])
+  @@map("reel_comment_likes")
+}
+
+model SavedReel {
+  id        String   @id @default(cuid())
+  userId    String
+  reelId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reel Reel @relation(fields: [reelId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, reelId])
+  @@index([userId])
+  @@index([reelId])
+  @@map("saved_reels")
+}
+
+model ReelHashtag {
+  id        String   @id @default(cuid())
+  reelId    String
+  hashtagId String
+  createdAt DateTime @default(now())
+
+  reel    Reel    @relation(fields: [reelId], references: [id], onDelete: Cascade)
+  hashtag Hashtag @relation(fields: [hashtagId], references: [id], onDelete: Cascade)
+
+  @@unique([reelId, hashtagId])
+  @@index([reelId])
+  @@index([hashtagId])
+  @@map("reel_hashtags")
+}
+
+// ==================================================
+// Phase 5: Seller application + admin verification
+// ==================================================
+
+model SellerApplication {
+  id     String @id @default(cuid())
+  userId String @unique // one application row per user — prevents duplicate/concurrent applications
+
+  // Required-eventually fields default to "" so a bare DRAFT row can be
+  // created on first save and filled in incrementally step-by-step;
+  // real completeness is enforced by sellerApplicationSubmitSchema right
+  // before the DRAFT/REJECTED -> PENDING transition, not by the DB.
+  businessName String  @default("")
+  businessType String  @default("")
+  description  String? @db.Text
+
+  contactEmail String @default("")
+  contactPhone String @default("")
+
+  addressLine String @default("")
+  city        String @default("")
+  state       String @default("")
+  country     String @default("")
+  postalCode  String @default("")
+
+  status          SellerApplicationStatus @default(DRAFT)
+  submittedAt     DateTime?
+  reviewedAt      DateTime?
+  reviewedBy      String?
+  rejectionReason String?                 @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User                         @relation("UserSellerApplication", fields: [userId], references: [id], onDelete: Cascade)
+  reviewer  User?                        @relation("SellerApplicationReviewer", fields: [reviewedBy], references: [id], onDelete: SetNull)
+  documents SellerVerificationDocument[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([reviewedBy])
+  @@map("seller_applications")
+}
+
+model SellerVerificationDocument {
+  id               String             @id @default(cuid())
+  applicationId    String
+  type             SellerDocumentType
+  // Private object storage key ONLY — never a public URL. Reads happen
+  // exclusively through short-lived admin-authorized signed URLs; see
+  // src/lib/storage/private-document-storage.interface.ts.
+  storageKey       String
+  originalFilename String
+  mimeType         String
+  fileSize         Int
+  createdAt        DateTime           @default(now())
+
+  application SellerApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@map("seller_verification_documents")
+}
+
+// ==================================================
+// Phase 6: Products + seller storefront + inventory + tagging
+// ==================================================
+
+// Public marketplace/storefront info — deliberately separate from
+// SellerApplication (private verification data, Phase 5). Only ever
+// exposed through public-safe fields; storefront APIs must never join
+// in SellerApplication data.
+model SellerProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  storeName   String
+  slug        String   @unique
+  description String?  @db.Text
+  logoKey     String?
+  logoUrl     String?
+  bannerKey   String?
+  bannerUrl   String?
+  website     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  products Product[]
+  variants ProductVariant[]
+
+  @@index([userId])
+  @@index([slug])
+  @@map("seller_profiles")
+}
+
+model Product {
+  id              String          @id @default(cuid())
+  sellerProfileId String
+  name            String
+  slug            String          @unique
+  description     String?         @db.Text
+  category        ProductCategory @default(OTHER)
+  status          ProductStatus   @default(DRAFT)
+
+  // Authoritative price/stock always live on ProductVariant (every
+  // product has >=1 variant — a single auto-created "default" variant
+  // for products without options). These two columns are a denormalized
+  // read cache recomputed transactionally whenever variants change (see
+  // seller-product.service.ts) — Prisma can't cheaply sort/filter a
+  // paginated product list by an aggregate (MIN price / SUM stock)
+  // across a relation, and /shop needs to do both. Never written to
+  // directly by request handlers.
+  basePrice      Decimal  @default(0) @db.Decimal(12, 2)
+  compareAtPrice Decimal? @db.Decimal(12, 2)
+  currency       String   @default("INR")
+  totalStock     Int      @default(0)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  publishedAt DateTime?
+
+  sellerProfile SellerProfile    @relation(fields: [sellerProfileId], references: [id], onDelete: Cascade)
+  media         ProductMedia[]
+  options       ProductOption[]
+  variants      ProductVariant[]
+  postTags      PostProductTag[]
+  reelTags      ReelProductTag[]
+
+  // Phase 7 Cart + Wishlist relations
+  cartItems     CartItem[]
+  wishlistItems WishlistItem[]
+
+  @@index([sellerProfileId])
+  @@index([status])
+  @@index([category])
+  @@index([createdAt])
+  @@index([basePrice])
+  @@map("products")
+}
+
+model ProductMedia {
+  id         String    @id @default(cuid())
+  productId  String
+  storageKey String
+  mediaUrl   String
+  mediaType  MediaType @default(IMAGE)
+  // order 0 is the primary/cover image, matching PostMedia's convention.
+  order      Int       @default(0)
+  altText    String?
+  createdAt  DateTime  @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, order])
+  @@index([productId])
+  @@map("product_media")
+}
+
+// A named axis a product varies along (e.g. "Size", "Color") — never
+// hardcoded to a fixed set of option names.
+model ProductOption {
+  id        String   @id @default(cuid())
+  productId String
+  name      String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  product Product              @relation(fields: [productId], references: [id], onDelete: Cascade)
+  values  ProductOptionValue[]
+
+  @@unique([productId, name])
+  @@index([productId])
+  @@map("product_options")
+}
+
+model ProductOptionValue {
+  id       String @id @default(cuid())
+  optionId String
+  value    String
+  order    Int    @default(0)
+
+  option        ProductOption        @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  variantValues VariantOptionValue[]
+
+  @@unique([optionId, value])
+  @@index([optionId])
+  @@map("product_option_values")
+}
+
+model ProductVariant {
+  id              String @id @default(cuid())
+  productId       String
+  // Denormalized from product.sellerProfileId so SKU uniqueness can be
+  // enforced with a real DB constraint scoped per-seller (not globally,
+  // and not just per-product — see Phase 6 spec section 14).
+  sellerProfileId String
+
+  sku       String
+  price     Decimal @db.Decimal(12, 2)
+  stock     Int     @default(0)
+  isActive  Boolean @default(true)
+  // True for the single auto-created variant of a product with no
+  // options — see the module comment on Product.basePrice above.
+  isDefault Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product       Product              @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sellerProfile SellerProfile        @relation(fields: [sellerProfileId], references: [id], onDelete: Cascade)
+  optionValues  VariantOptionValue[]
+
+  // Phase 7 Cart relation
+  cartItems     CartItem[]
+
+  @@unique([sellerProfileId, sku])
+  @@index([productId])
+  @@index([sellerProfileId])
+  @@map("product_variants")
+}
+
+// Join model resolving which ProductOptionValue each ProductVariant
+// represents (e.g. variant "Size M / Black" -> {Size: M, Color: Black}).
+// Uniqueness of the overall combination per product (no two variants
+// sharing the exact same set of option values) is enforced in
+// seller-product.service.ts, since a "set" constraint across this join
+// table isn't expressible as a single DB constraint.
+model VariantOptionValue {
+  id            String @id @default(cuid())
+  variantId     String
+  optionValueId String
+
+  variant     ProductVariant     @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  optionValue ProductOptionValue @relation(fields: [optionValueId], references: [id], onDelete: Cascade)
+
+  @@unique([variantId, optionValueId])
+  @@index([variantId])
+  @@index([optionValueId])
+  @@map("variant_option_values")
+}
+
+// Product tagging policy (Phase 6 spec section 29): only a product's
+// own seller may tag it into their own post/reel content — enforced in
+// product-tag.service.ts, not just by this schema.
+model PostProductTag {
+  id        String   @id @default(cuid())
+  postId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  post    Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, productId])
+  @@index([postId])
+  @@index([productId])
+  @@map("post_product_tags")
+}
+
+model ReelProductTag {
+  id        String   @id @default(cuid())
+  reelId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  reel    Reel    @relation(fields: [reelId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([reelId, productId])
+  @@index([reelId])
+  @@index([productId])
+  @@map("reel_product_tags")
+}
+
+// ==================================================
+// Phase 7: Cart + Wishlist
+// ==================================================
+
+model CartItem {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  variantId String?
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variant ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId, variantId])
+  @@index([userId])
+  @@index([productId])
+  @@index([variantId])
+  @@map("cart_items")
+}
+
+model WishlistItem {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([userId])
+  @@index([productId])
+  @@map("wishlist_items")
+}
