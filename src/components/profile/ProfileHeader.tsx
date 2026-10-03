@@ -9,7 +9,7 @@ import { FollowButton } from "@/components/users/FollowButton";
 import { UserListModal } from "@/components/users/UserListModal";
 import { PublicUserProfile } from "@/types/profile";
 import { useAuth } from "@/features/auth/auth-context";
-import { Globe, Calendar, Settings, Sparkles, ImagePlus, Clapperboard } from "lucide-react";
+import { Globe, Calendar, Settings, Sparkles, ImagePlus, Clapperboard, PackagePlus } from "lucide-react";
 import { CreateContentModal } from "./CreateContentModal";
 
 export function ProfileHeader({ userProfile }: { userProfile: PublicUserProfile }) {
@@ -91,6 +91,18 @@ export function ProfileHeader({ userProfile }: { userProfile: PublicUserProfile 
                       <Clapperboard className="h-4 w-4 text-fuchsia-500" />
                       <span>Upload Reel</span>
                     </Button>
+                    {currentUser?.role === "SELLER" && (
+                      <Link href="/seller/products/new">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-2 border-fuchsia-500/40 text-fuchsia-600 dark:text-fuchsia-400 hover:border-fuchsia-500 hover:bg-fuchsia-500/10"
+                        >
+                          <PackagePlus className="h-4 w-4" />
+                          <span>Upload Product</span>
+                        </Button>
+                      </Link>
+                    )}
                     <Link href="/settings/profile">
                       <Button variant="outline" size="sm" className="gap-2">
                         <Settings className="h-4 w-4 text-neutral-400" />

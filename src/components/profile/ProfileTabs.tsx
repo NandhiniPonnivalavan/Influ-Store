@@ -165,12 +165,24 @@ export function ProfileTabs({
         {activeTab === "shop" && showStoreTab && (
           storeSlug ? (
             <div className="space-y-6">
-              <div className="flex justify-end">
-                <Link href={`/store/${storeSlug}`}>
-                  <Button variant="outline" size="sm" className="gap-1.5">
-                    <Store className="h-3.5 w-3.5" /> Visit full store
-                  </Button>
-                </Link>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  {isOwnProfile ? "Products available in your store" : `Products from @${username}`}
+                </p>
+                <div className="flex items-center gap-2">
+                  {isOwnProfile && (
+                    <Link href="/seller/products/new">
+                      <Button size="sm" className="gap-1.5 bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white shadow-md shadow-fuchsia-500/20">
+                        <ShoppingBag className="h-3.5 w-3.5" /> Upload Product
+                      </Button>
+                    </Link>
+                  )}
+                  <Link href={`/store/${storeSlug}`}>
+                    <Button variant="outline" size="sm" className="gap-1.5">
+                      <Store className="h-3.5 w-3.5" /> Visit full store
+                    </Button>
+                  </Link>
+                </div>
               </div>
               <ProductGrid
                 fetchBaseUrl={`/api/products?sellerSlug=${encodeURIComponent(storeSlug)}`}
