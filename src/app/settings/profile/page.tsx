@@ -2,7 +2,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { EditProfileForm } from "@/components/profile/EditProfileForm";
 import Link from "next/link";
-import { User, Bell, Shield, Palette, Lock, ArrowLeft } from "lucide-react";
+import { User, Bell, Shield, Lock, ArrowLeft } from "lucide-react";
 
 export const metadata = {
   title: "Edit Profile | Influ-Store Settings",
@@ -15,7 +15,6 @@ export default function EditProfilePage() {
     { href: "/settings", label: "General & Account", icon: Lock, active: false },
     { href: "/settings#notifications", label: "Notifications", icon: Bell, active: false },
     { href: "/settings#privacy", label: "Privacy & Security", icon: Shield, active: false },
-    { href: "/settings#appearance", label: "Appearance", icon: Palette, active: false },
   ];
 
   return (

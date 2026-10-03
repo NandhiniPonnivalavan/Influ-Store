@@ -7,13 +7,10 @@ import { Footer } from "@/components/layout/Footer";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/features/auth/auth-context";
-import { useTheme } from "next-themes";
-import { User, Bell, Palette, Lock, Sun, Moon, Monitor, ArrowRight } from "lucide-react";
-import { cn } from "@/lib/utils/cn";
+import { User, Bell, Lock, Shield, ArrowRight } from "lucide-react";
 
 export default function SettingsPage() {
   const { user } = useAuth();
-  const { theme, setTheme } = useTheme();
 
   const [pushNotifications, setPushNotifications] = useState(true);
   const [emailUpdates, setEmailUpdates] = useState(false);
@@ -39,7 +36,7 @@ export default function SettingsPage() {
             Settings
           </h1>
           <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-            Manage your account preferences, appearance, and privacy settings.
+            Manage your account preferences, notifications, and privacy settings.
           </p>
         </div>
 
@@ -75,11 +72,11 @@ export default function SettingsPage() {
                 <span>Notifications</span>
               </a>
               <a
-                href="#appearance"
+                href="#privacy"
                 className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-white/5 transition"
               >
-                <Palette className="h-4 w-4" />
-                <span>Appearance</span>
+                <Shield className="h-4 w-4" />
+                <span>Privacy & Security</span>
               </a>
             </nav>
           </aside>
@@ -103,62 +100,6 @@ export default function SettingsPage() {
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
-            </Card>
-
-            {/* APPEARANCE SECTION */}
-            <Card id="appearance" className="p-6 sm:p-8 space-y-6">
-              <div>
-                <h2 className="text-lg font-bold text-neutral-900 dark:text-white">
-                  Appearance & Theme
-                </h2>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                  Choose how Influ-Store looks across your devices.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setTheme("light")}
-                  className={cn(
-                    "flex flex-col items-center gap-2 p-4 rounded-2xl border text-center transition",
-                    theme === "light"
-                      ? "border-fuchsia-500 bg-fuchsia-500/10 text-neutral-900 dark:text-white font-semibold"
-                      : "border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                  )}
-                >
-                  <Sun className="h-5 w-5 text-amber-500" />
-                  <span className="text-xs">Light</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setTheme("dark")}
-                  className={cn(
-                    "flex flex-col items-center gap-2 p-4 rounded-2xl border text-center transition",
-                    theme === "dark"
-                      ? "border-fuchsia-500 bg-fuchsia-500/10 text-neutral-900 dark:text-white font-semibold"
-                      : "border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                  )}
-                >
-                  <Moon className="h-5 w-5 text-fuchsia-400" />
-                  <span className="text-xs">Dark</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setTheme("system")}
-                  className={cn(
-                    "flex flex-col items-center gap-2 p-4 rounded-2xl border text-center transition",
-                    theme === "system"
-                      ? "border-fuchsia-500 bg-fuchsia-500/10 text-neutral-900 dark:text-white font-semibold"
-                      : "border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                  )}
-                >
-                  <Monitor className="h-5 w-5 text-neutral-400" />
-                  <span className="text-xs">System</span>
-                </button>
-              </div>
             </Card>
 
             {/* NOTIFICATIONS SECTION */}
@@ -210,7 +151,7 @@ export default function SettingsPage() {
             </Card>
 
             {/* PRIVACY & SECURITY SECTION */}
-            <Card className="p-6 sm:p-8 space-y-6">
+            <Card id="privacy" className="p-6 sm:p-8 space-y-6">
               <div>
                 <h2 className="text-lg font-bold text-neutral-900 dark:text-white">
                   Privacy & Security

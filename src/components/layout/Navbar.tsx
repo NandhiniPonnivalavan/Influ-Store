@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/features/auth/auth-context";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { CreateMenu } from "@/components/layout/CreateMenu";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { Menu, X, Home, Compass, Search, ShoppingBag, Bell, LogIn, UserPlus, ImagePlus, Video, Clapperboard, Heart, ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
@@ -113,8 +112,6 @@ export function Navbar() {
             <Search className="h-4 w-4" />
           </Link>
 
-          <ThemeToggle />
-
           {isLoading ? (
             <div className="h-10 w-24 rounded-full bg-neutral-200 dark:bg-neutral-800 animate-pulse" />
           ) : isAuthenticated && user ? (
@@ -162,8 +159,6 @@ export function Navbar() {
               </span>
             )}
           </Link>
-
-          <ThemeToggle />
 
           <button
             type="button"
@@ -236,13 +231,6 @@ export function Navbar() {
                   className="flex items-center gap-3 rounded-2xl px-4 py-3 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-white/10"
                 >
                   <span>Wishlist</span>
-                </Link>
-                <Link
-                  href="/saved"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 rounded-2xl px-4 py-3 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-white/10"
-                >
-                  <span>Saved Posts</span>
                 </Link>
                 <Link
                   href="/settings/profile"

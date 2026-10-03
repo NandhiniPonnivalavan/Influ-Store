@@ -4,12 +4,10 @@ import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/features/auth/auth-context";
 import { Avatar } from "@/components/ui/Avatar";
-import { User, Settings, LogOut, Moon, Sun, Sparkles, Bookmark, Store, Package, ShieldCheck } from "lucide-react";
-import { useTheme } from "next-themes";
+import { User, Settings, LogOut, Sparkles, Store, Package, ShieldCheck } from "lucide-react";
 
 export function UserMenu() {
   const { user, logout } = useAuth();
-  const { theme, setTheme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -27,10 +25,6 @@ export function UserMenu() {
 
   const displayName = user.profile?.displayName || user.username;
   const avatarUrl = user.profile?.avatarUrl;
-
-  const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
-  };
 
   return (
     <div className="relative" ref={menuRef}>
@@ -85,15 +79,6 @@ export function UserMenu() {
               <span>Edit Profile</span>
             </Link>
 
-            <Link
-              href="/saved"
-              onClick={() => setIsOpen(false)}
-              className="flex items-center gap-3 rounded-2xl px-4 py-2.5 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-white/10 transition"
-            >
-              <Bookmark className="h-4 w-4 text-neutral-500" />
-              <span>Saved</span>
-            </Link>
-
             {user.role === "SELLER" && (
               <>
                 <Link
@@ -136,24 +121,6 @@ export function UserMenu() {
                 <span>Seller Applications</span>
               </Link>
             )}
-
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="w-full flex items-center justify-between rounded-2xl px-4 py-2.5 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-white/10 transition text-left"
-            >
-              <div className="flex items-center gap-3">
-                {theme === "dark" ? (
-                  <Moon className="h-4 w-4 text-neutral-500" />
-                ) : (
-                  <Sun className="h-4 w-4 text-neutral-500" />
-                )}
-                <span>Appearance</span>
-              </div>
-              <span className="text-xs text-neutral-400 capitalize">
-                {theme || "system"}
-              </span>
-            </button>
           </div>
 
           {/* LOGOUT */}

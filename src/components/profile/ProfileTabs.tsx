@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Grid, Bookmark, ShoppingBag, Store, Clapperboard, ImagePlus } from "lucide-react";
+import { Grid, ShoppingBag, Store, Clapperboard, ImagePlus } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { FeedPost } from "@/types/post";
 import { ReelItem } from "@/types/reel";
@@ -40,7 +40,7 @@ export function ProfileTabs({
   initialStoreProductsCursor,
   showStoreSetupPrompt = false,
 }: ProfileTabsProps) {
-  const [activeTab, setActiveTab] = useState<"posts" | "reels" | "saved" | "shop">("posts");
+  const [activeTab, setActiveTab] = useState<"posts" | "reels" | "shop">("posts");
   const [createModalTab, setCreateModalTab] = useState<"post" | "reel" | null>(null);
   // Non-sellers never see a fake store tab (Phase 6 spec section 27).
   const showStoreTab = Boolean(storeSlug) || showStoreSetupPrompt;
@@ -78,21 +78,7 @@ export function ProfileTabs({
             <span>Reels</span>
           </button>
 
-          {isOwnProfile && (
-            <button
-              type="button"
-              onClick={() => setActiveTab("saved")}
-              className={cn(
-                "flex items-center gap-2 border-b-2 py-4 text-xs font-semibold uppercase tracking-wider transition-colors",
-                activeTab === "saved"
-                  ? "border-fuchsia-500 text-neutral-900 dark:text-white"
-                  : "border-transparent text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
-              )}
-            >
-              <Bookmark className="h-4 w-4" />
-              <span>Saved</span>
-            </button>
-          )}
+
 
           {showStoreTab && (
             <button
@@ -174,25 +160,7 @@ export function ProfileTabs({
           </div>
         )}
 
-        {activeTab === "saved" && (
-          // Saved posts/reels are private — this tab only ever renders for
-          // the profile owner, and always links to the dedicated private
-          // page rather than listing anything inline here.
-          <div className="mx-auto max-w-sm space-y-4 py-8 text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-dashed border-neutral-300 dark:border-neutral-800 text-neutral-400">
-              <Bookmark className="h-7 w-7" />
-            </div>
-            <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
-              Your saved posts &amp; reels
-            </h3>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">
-              Saved items are private and only visible to you.
-            </p>
-            <Link href="/saved">
-              <Button size="sm">View saved</Button>
-            </Link>
-          </div>
-        )}
+
 
         {activeTab === "shop" && showStoreTab && (
           storeSlug ? (
