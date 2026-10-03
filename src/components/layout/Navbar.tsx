@@ -25,20 +25,33 @@ export function Navbar() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const pathname = usePathname();
   const [cartCount, setCartCount] = useState<number>(0);
+  const [unreadNotifications, setUnreadNotifications] = useState<number>(0);
 
   useEffect(() => {
     if (!isAuthenticated) {
       setCartCount(0);
+      setUnreadNotifications(0);
       return;
     }
 
-    async function fetchCartCount() {
+    async function fetchCounts() {
       try {
-        const res = await fetch("/api/cart", { headers: { "Cache-Control": "no-cache" } });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success && data.cart) {
-            setCartCount(data.cart.totalItems);
+        const [cartRes, notifRes] = await Promise.all([
+          fetch("/api/cart", { headers: { "Cache-Control": "no-cache" } }),
+          fetch("/api/notifications", { headers: { "Cache-Control": "no-cache" } }),
+        ]);
+
+        if (cartRes.ok) {
+          const cartData = await cartRes.json();
+          if (cartData.success && cartData.cart) {
+            setCartCount(cartData.cart.totalItems);
+          }
+        }
+
+        if (notifRes.ok) {
+          const notifData = await notifRes.json();
+          if (notifData.success && typeof notifData.unreadCount === "number") {
+            setUnreadNotifications(notifData.unreadCount);
           }
         }
       } catch {
@@ -46,8 +59,8 @@ export function Navbar() {
       }
     }
 
-    fetchCartCount();
-    const interval = setInterval(fetchCartCount, 15000);
+    fetchCounts();
+    const interval = setInterval(fetchCounts, 15000);
     return () => clearInterval(interval);
   }, [isAuthenticated, pathname]);
 
@@ -59,7 +72,7 @@ export function Navbar() {
     { href: "/products", label: "Shop", icon: ShoppingBag, badge: null },
     { href: "/cart", label: "Cart", icon: ShoppingCart, badge: cartCount > 0 ? cartCount : null },
     { href: "/wishlist", label: "Wishlist", icon: Heart, badge: null },
-    { href: "/notifications", label: "Notifications", icon: Bell, badge: null },
+    { href: "/notifications", label: "Notifications", icon: Bell, badge: unreadNotifications > 0 ? unreadNotifications : null },
   ];
   const createMenuIndex = 5;
 

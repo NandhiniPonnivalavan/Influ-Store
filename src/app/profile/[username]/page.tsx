@@ -10,6 +10,7 @@ import { listUserReels } from "@/lib/services/reel.service";
 import { isUserFollowing } from "@/lib/services/follow.service";
 import { getStoreSlugByUserId } from "@/lib/services/seller-profile.service";
 import { listProducts } from "@/lib/services/product.service";
+import { getUserSettings } from "@/lib/services/settings.service";
 
 interface ProfilePageProps {
   params: Promise<{ username: string }>;
@@ -61,12 +62,16 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
   const currentUser = await getCurrentUser();
   const isOwnProfile = currentUser?.id === user.id;
 
-  const [postsPage, reelsPage, isFollowing, storeSlug] = await Promise.all([
+  const [postsPage, reelsPage, isFollowing, storeSlug, userSettings] = await Promise.all([
     listUserPosts(user.id, currentUser?.id ?? null),
     listUserReels(user.id, currentUser?.id ?? null),
     isUserFollowing(currentUser?.id ?? null, user.id),
     user.role === "SELLER" ? getStoreSlugByUserId(user.id) : Promise.resolve(null),
+    getUserSettings(user.id),
   ]);
+
+  const isPrivate = userSettings.privateProfile;
+  const canViewContent = isOwnProfile || !isPrivate || isFollowing;
 
   const storeProductsPage = storeSlug ? await listProducts({ sellerSlug: storeSlug }) : null;
 
@@ -102,6 +107,8 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
           initialStoreProducts={storeProductsPage?.items ?? []}
           initialStoreProductsCursor={storeProductsPage?.nextCursor ?? null}
           showStoreSetupPrompt={isOwnProfile && user.role === "SELLER" && !storeSlug}
+          isPrivate={isPrivate}
+          canViewContent={canViewContent}
         />
       </div>
 

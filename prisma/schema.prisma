@@ -103,6 +103,12 @@ model User {
   // Phase 8 Order relations
   orders        Order[]
 
+  // User Settings & Preferences
+  settings      UserSettings?
+
+  // Notifications
+  notifications Notification[]
+
   @@index([username])
   @@index([email])
   @@map("users")
@@ -785,4 +791,38 @@ model OrderItem {
   @@index([orderId])
   @@index([productId])
   @@map("order_items")
+}
+
+model UserSettings {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  inAppNotifications Boolean  @default(true)
+  emailUpdates       Boolean  @default(false)
+  privateProfile     Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_settings")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  actorId   String?
+  type      String   // "like" | "comment" | "follow" | "purchase" | "system"
+  message   String
+  read      Boolean  @default(false)
+  linkUrl   String?
+  imageUrl  String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+  @@map("notifications")
 }
