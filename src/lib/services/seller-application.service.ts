@@ -171,12 +171,15 @@ export async function addDocument(
 ): Promise<SellerDocumentItem> {
   assertSellerDocumentKeyOwnedByUser(input.storageKey, userId);
 
-  const application = await prisma.sellerApplication.findUnique({
+  let application = await prisma.sellerApplication.findUnique({
     where: { userId },
     include: { _count: { select: { documents: true } } },
   });
   if (!application) {
-    throw new NotFoundError("Save your application details before uploading documents.");
+    application = await prisma.sellerApplication.create({
+      data: { userId },
+      include: { _count: { select: { documents: true } } },
+    });
   }
   assertEditable(application);
 

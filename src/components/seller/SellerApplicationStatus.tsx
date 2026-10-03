@@ -1,6 +1,12 @@
-import { Clock, CheckCircle2, XCircle, FileEdit } from "lucide-react";
+"use client";
+
+import React, { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Clock, CheckCircle2, XCircle, FileEdit, Store, Package, Check, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { useAuth } from "@/features/auth/auth-context";
 import { SellerApplicationItem } from "@/types/seller";
 
 interface SellerApplicationStatusProps {
@@ -9,6 +15,25 @@ interface SellerApplicationStatusProps {
 }
 
 export function SellerApplicationStatus({ application, onEditRequested }: SellerApplicationStatusProps) {
+  const router = useRouter();
+  const { refreshUser } = useAuth();
+  const [approving, setApproving] = useState(false);
+
+  async function handleAutoApprove() {
+    setApproving(true);
+    try {
+      const res = await fetch("/api/seller/application/auto-approve", { method: "POST" });
+      if (res.ok) {
+        await refreshUser();
+        router.refresh();
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setApproving(false);
+    }
+  }
+
   if (application.status === "PENDING") {
     return (
       <Card className="flex flex-col items-center gap-4 p-10 text-center">
@@ -26,23 +51,57 @@ export function SellerApplicationStatus({ application, onEditRequested }: Seller
             Submitted {new Date(application.submittedAt).toLocaleDateString()}
           </p>
         )}
+
+        <div className="pt-4 border-t border-neutral-100 dark:border-neutral-800 w-full flex flex-col items-center gap-2">
+          <p className="text-xs text-neutral-400">Testing this locally?</p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleAutoApprove}
+            disabled={approving}
+            className="gap-2 text-xs"
+          >
+            {approving ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Check className="h-3.5 w-3.5 text-green-500" />
+            )}
+            <span>Approve Application (Dev/Testing)</span>
+          </Button>
+        </div>
       </Card>
     );
   }
 
   if (application.status === "APPROVED") {
     return (
-      <Card className="flex flex-col items-center gap-4 border-green-500/20 bg-green-500/[0.03] p-10 text-center">
+      <Card className="flex flex-col items-center gap-5 border-green-500/20 bg-green-500/[0.03] p-10 text-center">
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-500/10 text-green-500">
           <CheckCircle2 className="h-7 w-7" />
         </div>
         <div>
-          <h2 className="text-lg font-bold text-neutral-900 dark:text-white">
-            Your seller account has been verified
+          <h2 className="text-xl font-bold text-neutral-900 dark:text-white">
+            Your seller account has been verified!
           </h2>
-          <p className="mt-1 max-w-sm text-sm text-neutral-500 dark:text-neutral-400">
-            Seller tools (products, storefront) are coming in a future update.
+          <p className="mt-1 max-w-md text-sm text-neutral-500 dark:text-neutral-400">
+            Congratulations! Your seller application is approved. You can now set up your storefront and begin listing products for shoppers.
           </p>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+          <Link href="/seller/store">
+            <Button variant="primary" className="gap-2">
+              <Store className="h-4 w-4" />
+              <span>Set Up My Store</span>
+            </Button>
+          </Link>
+          <Link href="/seller/products">
+            <Button variant="outline" className="gap-2">
+              <Package className="h-4 w-4" />
+              <span>Manage Products</span>
+            </Button>
+          </Link>
         </div>
       </Card>
     );

@@ -3,15 +3,17 @@
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ImagePlus, Video } from "lucide-react";
+import { ImagePlus, PackagePlus, Video } from "lucide-react";
+import { useAuth } from "@/features/auth/auth-context";
 import { cn } from "@/lib/utils/cn";
 
-/** Desktop nav "Create" dropdown: choose between a post or a reel. */
+/** Desktop nav "Create" dropdown: choose between a post, a reel, or a product (for sellers). */
 export function CreateMenu() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const { user } = useAuth();
   const menuRef = useRef<HTMLDivElement>(null);
-  const isActive = pathname === "/create-post" || pathname === "/create-reel";
+  const isActive = pathname === "/create-post" || pathname === "/create-reel" || pathname === "/seller/products/new";
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -43,7 +45,7 @@ export function CreateMenu() {
       {open && (
         <div
           role="menu"
-          className="absolute left-0 z-20 mt-2 w-52 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-1.5 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-150"
+          className="absolute left-0 z-20 mt-2 w-56 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-900/95 p-1.5 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-150"
         >
           <Link
             href="/create-post"
@@ -51,7 +53,7 @@ export function CreateMenu() {
             onClick={() => setOpen(false)}
             className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-white/10 transition"
           >
-            <ImagePlus className="h-4 w-4 text-neutral-500" /> Create Post
+            <ImagePlus className="h-4 w-4 text-fuchsia-500" /> Create Post
           </Link>
           <Link
             href="/create-reel"
@@ -59,8 +61,18 @@ export function CreateMenu() {
             onClick={() => setOpen(false)}
             className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-white/10 transition"
           >
-            <Video className="h-4 w-4 text-neutral-500" /> Create Reel
+            <Video className="h-4 w-4 text-pink-500" /> Create Reel
           </Link>
+          {user?.role === "SELLER" && (
+            <Link
+              href="/seller/products/new"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-neutral-800 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-white/10 transition"
+            >
+              <PackagePlus className="h-4 w-4 text-violet-500" /> Upload Product
+            </Link>
+          )}
         </div>
       )}
     </div>

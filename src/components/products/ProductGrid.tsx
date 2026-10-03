@@ -58,12 +58,15 @@ export function ProductGrid({
 
   if (products.length === 0) {
     return (
-      <div className="mx-auto max-w-sm space-y-4 py-16 text-center">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-dashed border-neutral-300 dark:border-neutral-800 text-neutral-400">
-          <ShoppingBag className="h-7 w-7" />
+      <div className="relative mx-auto max-w-md space-y-4 py-20 text-center">
+        <div className="mx-auto relative flex h-20 w-20 items-center justify-center rounded-3xl border border-white/10 bg-neutral-900/60 shadow-xl backdrop-blur-xl">
+          <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-fuchsia-500/20 to-transparent blur-md" />
+          <ShoppingBag className="relative h-8 w-8 text-neutral-400" />
         </div>
-        <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">No products yet</h3>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">{emptyMessage}</p>
+        <div className="space-y-1.5">
+          <h3 className="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">No products yet</h3>
+          <p className="text-sm leading-relaxed text-neutral-500 dark:text-neutral-400 max-w-sm mx-auto">{emptyMessage}</p>
+        </div>
       </div>
     );
   }

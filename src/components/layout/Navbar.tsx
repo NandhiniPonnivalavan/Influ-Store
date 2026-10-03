@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/features/auth/auth-context";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { CreateMenu } from "@/components/layout/CreateMenu";
-import { Menu, X, Home, Compass, Search, ShoppingBag, Bell, LogIn, UserPlus, ImagePlus, Video, Clapperboard, Heart, ShoppingCart } from "lucide-react";
+import { Menu, X, Home, Compass, Search, ShoppingBag, Bell, LogIn, UserPlus, ImagePlus, Video, Clapperboard, Heart, ShoppingCart, PackagePlus } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 interface NavLinkDef {
@@ -202,7 +202,7 @@ export function Navbar() {
               onClick={() => setMobileMenuOpen(false)}
               className="flex items-center gap-3 rounded-2xl px-4 py-3 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-white/10 hover:text-neutral-900 dark:hover:text-white transition"
             >
-              <ImagePlus className="h-5 w-5 text-neutral-500" />
+              <ImagePlus className="h-5 w-5 text-fuchsia-500" />
               <span className="font-medium">Create Post</span>
             </Link>
             <Link
@@ -210,9 +210,19 @@ export function Navbar() {
               onClick={() => setMobileMenuOpen(false)}
               className="flex items-center gap-3 rounded-2xl px-4 py-3 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-white/10 hover:text-neutral-900 dark:hover:text-white transition"
             >
-              <Video className="h-5 w-5 text-neutral-500" />
+              <Video className="h-5 w-5 text-pink-500" />
               <span className="font-medium">Create Reel</span>
             </Link>
+            {user?.role === "SELLER" && (
+              <Link
+                href="/seller/products/new"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 rounded-2xl px-4 py-3 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-white/10 hover:text-neutral-900 dark:hover:text-white transition"
+              >
+                <PackagePlus className="h-5 w-5 text-violet-500" />
+                <span className="font-medium">Upload Product</span>
+              </Link>
+            )}
 
             <div className="my-2 h-px bg-neutral-200 dark:bg-neutral-800" />
 

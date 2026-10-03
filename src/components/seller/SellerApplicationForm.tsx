@@ -105,7 +105,51 @@ export function SellerApplicationForm({ initialApplication }: SellerApplicationF
     }
   }
 
+  function validateCurrentStep(): boolean {
+    const errors: Record<string, string[]> = {};
+    if (step.key === "business") {
+      if (!fields.businessName.trim()) {
+        errors.businessName = ["Business name is required."];
+      }
+      if (!fields.businessType.trim()) {
+        errors.businessType = ["Please select a business type."];
+      }
+    } else if (step.key === "contact") {
+      if (!fields.contactEmail.trim()) {
+        errors.contactEmail = ["Contact email is required."];
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.contactEmail.trim())) {
+        errors.contactEmail = ["Enter a valid email address."];
+      }
+      if (!fields.contactPhone.trim()) {
+        errors.contactPhone = ["Contact phone is required."];
+      }
+    } else if (step.key === "address") {
+      if (!fields.addressLine.trim()) errors.addressLine = ["Street address is required."];
+      if (!fields.city.trim()) errors.city = ["City is required."];
+      if (!fields.state.trim()) errors.state = ["State / Region is required."];
+      if (!fields.country.trim()) errors.country = ["Country is required."];
+      if (!fields.postalCode.trim()) errors.postalCode = ["Postal code is required."];
+    } else if (step.key === "documents") {
+      if (documents.length === 0) {
+        setError("Please upload at least one verification document before continuing.");
+        return false;
+      }
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setError("Please fill in all required fields.");
+      return false;
+    }
+
+    return true;
+  }
+
   async function handleNext() {
+    setError("");
+    setFieldErrors({});
+    if (!validateCurrentStep()) return;
+
     const saved = await persistDraft();
     if (!saved) return;
     setStepIndex((i) => Math.min(i + 1, STEPS.length - 1));
