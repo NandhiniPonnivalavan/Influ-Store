@@ -77,8 +77,12 @@ export async function serializeReel(
 ): Promise<ReelItem> {
   const storage = getStorageService();
   const [mediaUrl, thumbnailUrl] = await Promise.all([
-    storage.getSignedReadUrl(reel.mediaKey),
-    reel.thumbnailKey ? storage.getSignedReadUrl(reel.thumbnailKey) : Promise.resolve(reel.thumbnailUrl),
+    reel.mediaKey?.startsWith("seed/") || (reel.mediaUrl && reel.mediaUrl.startsWith("http"))
+      ? Promise.resolve(reel.mediaUrl)
+      : storage.getSignedReadUrl(reel.mediaKey),
+    reel.thumbnailKey?.startsWith("seed/") || (reel.thumbnailUrl && reel.thumbnailUrl.startsWith("http"))
+      ? Promise.resolve(reel.thumbnailUrl)
+      : (reel.thumbnailKey ? storage.getSignedReadUrl(reel.thumbnailKey) : Promise.resolve(reel.thumbnailUrl)),
   ]);
 
   return {

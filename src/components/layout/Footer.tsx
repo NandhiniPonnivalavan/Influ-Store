@@ -18,8 +18,6 @@ export function Footer() {
         </div>
 
         <div className="flex flex-wrap items-center gap-6 text-sm text-neutral-500 dark:text-neutral-400">
-          <span>Phase 1: Foundation & Auth</span>
-          <span>·</span>
           <span>© 2026 Influstore. All rights reserved.</span>
         </div>
       </div>

@@ -1,7 +1,10 @@
 import { PrismaClient, Role, AccountType, ProductCategory, ProductStatus } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
-const prisma = new PrismaClient();
+const dbUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+const prisma: any = new PrismaClient(
+  dbUrl ? { datasources: { db: { url: dbUrl } } } : undefined
+);
 
 async function main() {
   console.log("Seeding database for Influ-Store Phase 1, 2, 3, and 4...");
@@ -11,7 +14,26 @@ async function main() {
   // 1. Seed demo user: Maya (Influencer)
   const maya = await prisma.user.upsert({
     where: { username: "mayacarter" },
-    update: {},
+    update: {
+      profile: {
+        upsert: {
+          create: {
+            displayName: "Maya Carter",
+            bio: "Fashion, lifestyle & minimal aesthetics. Inspiring your daily style. ✨",
+            website: "https://mayacarter.style",
+            avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
+            accountType: AccountType.INFLUENCER,
+          },
+          update: {
+            displayName: "Maya Carter",
+            bio: "Fashion, lifestyle & minimal aesthetics. Inspiring your daily style. ✨",
+            website: "https://mayacarter.style",
+            avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
+            accountType: AccountType.INFLUENCER,
+          },
+        },
+      },
+    },
     create: {
       email: "maya@influstore.com",
       username: "mayacarter",
@@ -32,7 +54,26 @@ async function main() {
   // 2. Seed demo user: Priya (Influencer)
   const priya = await prisma.user.upsert({
     where: { username: "priya" },
-    update: {},
+    update: {
+      profile: {
+        upsert: {
+          create: {
+            displayName: "Priyadharshini",
+            bio: "Discovering new trends and sharing curated fashion & lifestyle favorites. 🛍️",
+            website: "https://priyadharshini.me",
+            avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80",
+            accountType: AccountType.INFLUENCER,
+          },
+          update: {
+            displayName: "Priyadharshini",
+            bio: "Discovering new trends and sharing curated fashion & lifestyle favorites. 🛍️",
+            website: "https://priyadharshini.me",
+            avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80",
+            accountType: AccountType.INFLUENCER,
+          },
+        },
+      },
+    },
     create: {
       email: "priya@influstore.com",
       username: "priya",
@@ -40,9 +81,9 @@ async function main() {
       role: Role.USER,
       profile: {
         create: {
-          displayName: "Priya Sharma",
+          displayName: "Priyadharshini",
           bio: "Discovering new trends and sharing curated fashion & lifestyle favorites. 🛍️",
-          website: "https://priyasharma.me",
+          website: "https://priyadharshini.me",
           avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80",
           accountType: AccountType.INFLUENCER,
         },
@@ -53,7 +94,24 @@ async function main() {
   // 3. Seed demo user: Alex (Customer)
   const alex = await prisma.user.upsert({
     where: { username: "alexm" },
-    update: {},
+    update: {
+      profile: {
+        upsert: {
+          create: {
+            displayName: "Alex Morgan",
+            bio: "Design enthusiast, tech lover, and modern explorer.",
+            avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80",
+            accountType: AccountType.CUSTOMER,
+          },
+          update: {
+            displayName: "Alex Morgan",
+            bio: "Design enthusiast, tech lover, and modern explorer.",
+            avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80",
+            accountType: AccountType.CUSTOMER,
+          },
+        },
+      },
+    },
     create: {
       email: "alex@influstore.com",
       username: "alexm",
@@ -500,7 +558,18 @@ async function main() {
 
   const mayaStore = await prisma.sellerProfile.upsert({
     where: { userId: maya.id },
-    update: {},
+    update: {
+      storeName: "Maya's Style Studio",
+      slug: "mayas-style-studio",
+      description: "Curated fashion, accessories, and beauty essentials — handpicked by Maya.",
+      logoKey: "seed/mayacarter/store-logo.jpg",
+      logoUrl:
+        "https://images.unsplash.com/photo-1554412933-514a83d2f3c8?auto=format&fit=crop&w=400&q=85",
+      bannerKey: "seed/mayacarter/store-banner.jpg",
+      bannerUrl:
+        "https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?auto=format&fit=crop&w=1600&q=85",
+      website: "https://mayacarter.style",
+    },
     create: {
       userId: maya.id,
       storeName: "Maya's Style Studio",
@@ -516,11 +585,16 @@ async function main() {
     },
   });
 
+  // Clean up any previously seeded products so that all media and variants are freshly created
+  await prisma.product.deleteMany({
+    where: {
+      slug: { in: ["maya-everyday-tote", "maya-essential-hoodie", "maya-daily-glow-set"] },
+    },
+  });
+
   // Simple product (no options) — a single default variant.
-  const mayaTote = await prisma.product.upsert({
-    where: { slug: "maya-everyday-tote" },
-    update: {},
-    create: {
+  const mayaTote = await prisma.product.create({
+    data: {
       sellerProfileId: mayaStore.id,
       name: "Everyday Tote",
       slug: "maya-everyday-tote",
@@ -557,10 +631,8 @@ async function main() {
   });
 
   // Variant product — a "Size" option with three variants sharing one price.
-  const mayaHoodie = await prisma.product.upsert({
-    where: { slug: "maya-essential-hoodie" },
-    update: {},
-    create: {
+  const mayaHoodie = await prisma.product.create({
+    data: {
       sellerProfileId: mayaStore.id,
       name: "Essential Hoodie",
       slug: "maya-essential-hoodie",
@@ -606,8 +678,8 @@ async function main() {
     include: { options: { include: { values: true } } },
   });
 
-  const sizeOption = mayaHoodie.options.find((o) => o.name === "Size");
-  const sizeValueIdByLabel = new Map(sizeOption?.values.map((v) => [v.value, v.id]) ?? []);
+  const sizeOption = mayaHoodie.options.find((o: any) => o.name === "Size");
+  const sizeValueIdByLabel = new Map(sizeOption?.values.map((v: any) => [v.value, v.id]) ?? []);
   const hoodieVariantDefs = [
     { sku: "MAYA-HOODIE-S", size: "S", stock: 15 },
     { sku: "MAYA-HOODIE-M", size: "M", stock: 12 },
@@ -637,10 +709,8 @@ async function main() {
   }
 
   // Simple product again, in a different category.
-  await prisma.product.upsert({
-    where: { slug: "maya-daily-glow-set" },
-    update: {},
-    create: {
+  await prisma.product.create({
+    data: {
       sellerProfileId: mayaStore.id,
       name: "Daily Glow Set",
       slug: "maya-daily-glow-set",
@@ -724,9 +794,94 @@ async function main() {
     create: { reelId: mayaReel1.id, productId: mayaHoodie.id },
   });
 
+  // 13. Seed Phase 8 sample orders for Alex and Priya
+  console.log("Seeding Phase 8 orders...");
+  await prisma.order.deleteMany({
+    where: {
+      orderNumber: { in: ["INF-2026-00124", "INF-2026-00118", "INF-2026-00105"] },
+    },
+  });
+
+  // Sample order 1: For Priya (Delivered)
+  await prisma.order.create({
+    data: {
+      orderNumber: "INF-2026-00124",
+      userId: priya.id,
+      status: "DELIVERED",
+      paymentMethod: "CARD",
+      paymentStatus: "PAID",
+      subtotal: 1499,
+      discount: 0,
+      shippingFee: 0,
+      total: 1499,
+      currency: "INR",
+      fullName: "Priyadharshini",
+      phone: "+91 98765 43210",
+      addressLine1: "124 Horizon Avenue, Anna Nagar",
+      city: "Chennai",
+      state: "Tamil Nadu",
+      postalCode: "600040",
+      country: "India",
+      items: {
+        create: [
+          {
+            productId: mayaTote.id,
+            productName: "Everyday Tote",
+            productSlug: "maya-everyday-tote",
+            coverImageUrl: "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=1000&q=85",
+            category: ProductCategory.ACCESSORIES,
+            variantSku: "MAYA-TOTE-001",
+            price: 1499,
+            quantity: 1,
+            total: 1499,
+          },
+        ],
+      },
+    },
+  });
+
+  // Sample order 2: For Priya (Shipped)
+  await prisma.order.create({
+    data: {
+      orderNumber: "INF-2026-00118",
+      userId: priya.id,
+      status: "SHIPPED",
+      paymentMethod: "UPI",
+      paymentStatus: "PAID",
+      subtotal: 2199,
+      discount: 220,
+      shippingFee: 0,
+      total: 1979,
+      currency: "INR",
+      fullName: "Priyadharshini",
+      phone: "+91 98765 43210",
+      addressLine1: "124 Horizon Avenue, Anna Nagar",
+      city: "Chennai",
+      state: "Tamil Nadu",
+      postalCode: "600040",
+      country: "India",
+      items: {
+        create: [
+          {
+            productId: mayaHoodie.id,
+            productName: "Essential Hoodie",
+            productSlug: "maya-essential-hoodie",
+            coverImageUrl: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&w=1000&q=85",
+            category: ProductCategory.FASHION,
+            variantSku: "MAYA-HOODIE-M",
+            optionSummary: "Size: M",
+            price: 2199,
+            quantity: 1,
+            total: 2199,
+          },
+        ],
+      },
+    },
+  });
+
   console.log("Seeding finished successfully!");
   console.log(`Created/Verified users: @${maya.username}, @${priya.username}, @${alex.username}`);
-  console.log("Seeded 7 posts, 4 reels, 5 follow relationships, and indexed hashtags.");
+  console.log("Seeded 7 posts, 4 reels, 5 follow relationships, sample orders, and indexed hashtags.");
   console.log(
     `Seeded Maya's storefront (@${maya.username} -> SELLER) with 4 products (1 with size variants) and product tags on her post/reel.`
   );
