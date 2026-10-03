@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Grid, ShoppingBag, Store, Clapperboard, ImagePlus } from "lucide-react";
+import { Grid, ShoppingBag, Store, Clapperboard, ImagePlus, Lock } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { FeedPost } from "@/types/post";
 import { ReelItem } from "@/types/reel";
@@ -26,6 +26,10 @@ interface ProfileTabsProps {
   initialStoreProductsCursor: string | null;
   /** True only when viewing your own profile as an approved seller who hasn't set up a storefront yet — shows a setup prompt instead of hiding the tab entirely. */
   showStoreSetupPrompt?: boolean;
+  /** True if the user account is private */
+  isPrivate?: boolean;
+  /** True if viewer has permission to view posts/reels (self or approved follower) */
+  canViewContent?: boolean;
 }
 
 export function ProfileTabs({
@@ -39,6 +43,8 @@ export function ProfileTabs({
   initialStoreProducts,
   initialStoreProductsCursor,
   showStoreSetupPrompt = false,
+  isPrivate = false,
+  canViewContent = true,
 }: ProfileTabsProps) {
   const [activeTab, setActiveTab] = useState<"posts" | "reels" | "shop">("posts");
   const [createModalTab, setCreateModalTab] = useState<"post" | "reel" | null>(null);
@@ -100,13 +106,25 @@ export function ProfileTabs({
 
       {/* TAB CONTENT */}
       <div className="py-8">
-        {activeTab === "posts" && (
-          <div className="space-y-6">
-            {isOwnProfile && initialPosts.length > 0 && (
-              <div className="flex justify-end">
-                <Button
-                  variant="outline"
-                  size="sm"
+        {!canViewContent && isPrivate && !isOwnProfile ? (
+          <div className="mx-auto max-w-sm space-y-4 py-16 text-center">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl border border-neutral-300 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900/60 shadow-lg">
+              <Lock className="h-8 w-8 text-neutral-500" />
+            </div>
+            <h3 className="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">This Account is Private</h3>
+            <p className="text-sm leading-relaxed text-neutral-500 dark:text-neutral-400">
+              Follow @{username} to see their photos, reels, and stories.
+            </p>
+          </div>
+        ) : (
+          <>
+            {activeTab === "posts" && (
+              <div className="space-y-6">
+                {isOwnProfile && initialPosts.length > 0 && (
+                  <div className="flex justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
                   onClick={() => setCreateModalTab("post")}
                   className="gap-2 text-xs"
                 >
@@ -211,6 +229,8 @@ export function ProfileTabs({
               </Link>
             </div>
           )
+        )}
+          </>
         )}
       </div>
 

@@ -1,25 +1,79 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/features/auth/auth-context";
-import { User, Bell, Lock, Shield, ArrowRight } from "lucide-react";
+import { useToast } from "@/features/toast/toast-context";
+import { User, Bell, Lock, Shield, ArrowRight, CheckCircle2, AlertCircle } from "lucide-react";
 
 export default function SettingsPage() {
   const { user } = useAuth();
+  const { showToast } = useToast();
 
   const [pushNotifications, setPushNotifications] = useState(true);
   const [emailUpdates, setEmailUpdates] = useState(false);
   const [privateAccount, setPrivateAccount] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSavePreferences = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+  useEffect(() => {
+    async function loadSettings() {
+      try {
+        setLoading(true);
+        const res = await fetch("/api/settings");
+        const data = await res.json();
+        if (res.ok && data.success && data.settings) {
+          setPushNotifications(data.settings.inAppNotifications);
+          setEmailUpdates(data.settings.emailUpdates);
+          setPrivateAccount(data.settings.privateProfile);
+        }
+      } catch {
+        // Fallback to defaults
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    if (user) {
+      loadSettings();
+    }
+  }, [user]);
+
+  const handleSavePreferences = async () => {
+    setSaving(true);
+    setError("");
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          inAppNotifications: pushNotifications,
+          emailUpdates,
+          privateProfile: privateAccount,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to save settings.");
+      }
+
+      setSaved(true);
+      showToast("Preferences saved successfully!");
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to save preferences.";
+      setError(msg);
+      showToast(msg, "error");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -179,9 +233,19 @@ export default function SettingsPage() {
               </div>
             </Card>
 
+            {error && (
+              <div
+                role="alert"
+                className="flex items-center gap-3 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-600 dark:text-red-400"
+              >
+                <AlertCircle className="h-5 w-5 shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+
             {/* SAVE ACTION */}
             <div className="flex justify-end gap-3">
-              <Button type="button" onClick={handleSavePreferences}>
+              <Button type="button" onClick={handleSavePreferences} isLoading={saving} disabled={loading || saving}>
                 Save Preferences
               </Button>
             </div>
