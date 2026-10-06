@@ -14,6 +14,12 @@ pipeline {
             }
         }
 
+        stage('Prisma Generate') {
+            steps {
+                bat '.\\node_modules\\.bin\\prisma generate'
+            }
+        }
+
         stage('Build') {
             steps {
                 bat 'npm run build'
