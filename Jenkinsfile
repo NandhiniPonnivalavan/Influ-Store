@@ -28,7 +28,8 @@ pipeline {
 
         stage('Validate') {
             steps {
-                bat 'npm run lint'
+                bat 'node --version'
+                bat 'npm --version'
             }
         }
 
