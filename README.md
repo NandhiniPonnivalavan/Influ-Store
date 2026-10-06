@@ -113,3 +113,5 @@ Influ-Store/
 │   │   └── validations/           # Zod schemas
 │   └── types/                     # Application-wide TypeScript interfaces
 └── package.json
+
+CI pipeline configured using Jenkins and Docker
