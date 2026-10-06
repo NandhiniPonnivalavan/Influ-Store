@@ -32,7 +32,7 @@ export default async function StorePage({ params }: StorePageProps) {
   if (!store) notFound();
 
   const currentUser = await getCurrentUser();
-  const isOwner = currentUser?.id === store.sellerId;
+  const isOwner = currentUser?.username === store.seller.username;
 
   const productsPage = await listProducts({ sellerSlug: slug });
 
